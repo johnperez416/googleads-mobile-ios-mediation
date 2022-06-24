@@ -21,16 +21,14 @@
   NSMutableSet *siteIDs = [[NSMutableSet alloc] init];
 
   for (GADMediationCredentials *cred in configuration.credentials) {
-    NSString *siteID = cred.settings[kGADMAdapterVerizonMediaDCN];
+    NSString *siteID = cred.settings[GADMAdapterVerizonMediaDCN];
     GADMAdapterVerizonMutableSetAddObject(siteIDs, siteID);
   }
 
   if (!siteIDs.count) {
-    NSString *errorString =
-        @"Verizon media mediation configurations did not contain a valid site ID.";
-    NSError *error = [NSError errorWithDomain:kGADMAdapterVerizonMediaErrorDomain
-                                         code:GADErrorMediationAdapterError
-                                     userInfo:@{NSLocalizedDescriptionKey : errorString}];
+    NSError *error = GADMAdapterVerizonErrorWithCodeAndDescription(
+        GADMAdapterVerizonErrorInvalidServerParameters,
+        @"Verizon media mediation configurations did not contain a valid site ID.");
     completionHandler(error);
     return;
   }
@@ -51,7 +49,7 @@
 
 + (GADVersionNumber)adapterVersion {
   NSArray<NSString *> *versionComponents =
-      [kGADMAdapterVerizonMediaVersion componentsSeparatedByString:@"."];
+      [GADMAdapterVerizonMediaVersion componentsSeparatedByString:@"."];
 
   GADVersionNumber version = {0};
   if (versionComponents.count >= 4) {

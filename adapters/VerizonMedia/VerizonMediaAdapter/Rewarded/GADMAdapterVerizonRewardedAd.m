@@ -62,26 +62,20 @@ NSString *const GADMAdapterVerizonVideoCompleteEventId = @"onVideoComplete";
   _adConfiguration = adConfig;
 
   NSDictionary<NSString *, id> *credentials = adConfig.credentials.settings;
-  NSString *siteID = credentials[kGADMAdapterVerizonMediaDCN];
+  NSString *siteID = credentials[GADMAdapterVerizonMediaDCN];
   BOOL isInitialized = GADMAdapterVerizonInitializeVASAdsWithSiteID(siteID);
   if (!isInitialized) {
-    NSError *error =
-        [NSError errorWithDomain:kGADMAdapterVerizonMediaErrorDomain
-                            code:GADErrorMediationAdapterError
-                        userInfo:@{
-                          NSLocalizedDescriptionKey : @"Verizon adapter not properly initialized."
-                        }];
+    NSError *error = GADMAdapterVerizonErrorWithCodeAndDescription(
+        GADMAdapterVerizonErrorInitialization, @"Verizon SDK failed to initialize.");
     handler(nil, error);
     return;
   }
 
-  _placementID = credentials[kGADMAdapterVerizonMediaPosition];
+  _placementID = credentials[GADMAdapterVerizonMediaPosition];
 
   if (!_placementID) {
-    NSError *error =
-        [NSError errorWithDomain:GADErrorDomain
-                            code:GADErrorMediationAdapterError
-                        userInfo:@{NSLocalizedDescriptionKey : @"Placement ID cannot be nil"}];
+    NSError *error = GADMAdapterVerizonErrorWithCodeAndDescription(
+        GADMAdapterVerizonErrorInvalidServerParameters, @"Placement ID cannot be nil");
     handler(nil, error);
     return;
   }
@@ -116,13 +110,15 @@ NSString *const GADMAdapterVerizonVideoCompleteEventId = @"onVideoComplete";
   VASRequestMetadataBuilder *builder = [[VASRequestMetadataBuilder alloc] init];
 
   // Mediator.
-  builder.mediator = [NSString stringWithFormat:@"AdMobVAS-%@", kGADMAdapterVerizonMediaVersion];
+  builder.mediator = [NSString stringWithFormat:@"AdMobVAS-%@", GADMAdapterVerizonMediaVersion];
 
   VASAds.sharedInstance.requestMetadata = [builder build];
 }
 
 - (void)setCoppaFromAdConfiguration {
-  VASAds.sharedInstance.COPPA = _adConfiguration.childDirectedTreatment;
+  VASDataPrivacyBuilder *builder = [[VASDataPrivacyBuilder alloc] initWithDataPrivacy:VASAds.sharedInstance.dataPrivacy];
+  builder.coppa.applies = [_adConfiguration.childDirectedTreatment boolValue];
+  VASAds.sharedInstance.dataPrivacy = [builder build];
 }
 
 - (void)dealloc {

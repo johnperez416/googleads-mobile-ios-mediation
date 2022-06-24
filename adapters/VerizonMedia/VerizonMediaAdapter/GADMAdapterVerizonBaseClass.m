@@ -42,7 +42,7 @@
 }
 
 + (NSString *)adapterVersion {
-  return kGADMAdapterVerizonMediaVersion;
+  return GADMAdapterVerizonMediaVersion;
 }
 
 - (id)initWithGADMAdNetworkConnector:(id<GADMAdNetworkConnector>)connector {
@@ -50,10 +50,10 @@
   if (self) {
     _connector = connector;
     NSDictionary<NSString *, id> *credentials = [connector credentials];
-    if (credentials[kGADMAdapterVerizonMediaPosition]) {
-      self.placementID = credentials[kGADMAdapterVerizonMediaPosition];
+    if (credentials[GADMAdapterVerizonMediaPosition]) {
+      self.placementID = credentials[GADMAdapterVerizonMediaPosition];
     }
-    NSString *siteID = credentials[kGADMAdapterVerizonMediaDCN];
+    NSString *siteID = credentials[GADMAdapterVerizonMediaDCN];
     GADMAdapterVerizonInitializeVASAdsWithSiteID(siteID);
   }
 
@@ -86,10 +86,12 @@
 
   CGSize adSize = [self GADSupportedAdSizeFromRequestedSize:gadSize];
   if (CGSizeEqualToSize(adSize, CGSizeZero)) {
-    [connector adapter:self
-             didFailAd:[NSError errorWithDomain:GADErrorDomain
-                                           code:GADErrorInvalidRequest
-                                       userInfo:nil]];
+    NSString *description =
+        [NSString stringWithFormat:@"Invalid size for Verizon Media mediation adapter. Size: %@",
+                                   NSStringFromGADAdSize(gadSize)];
+    NSError *error = GADMAdapterVerizonErrorWithCodeAndDescription(
+        GADMAdapterVerizonErrorBannerSizeMismatch, description);
+    [connector adapter:self didFailAd:error];
     return;
   }
 
@@ -160,9 +162,7 @@
 }
 
 - (void)interstitialAdDidLeaveApplication:(nonnull VASInterstitialAd *)interstitialAd {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self->_connector adapterWillLeaveApplication:self];
-  });
+  // Do nothing.
 }
 
 - (void)interstitialAdClicked:(nonnull VASInterstitialAd *)interstitialAd {
@@ -224,9 +224,7 @@
 }
 
 - (void)inlineAdDidLeaveApplication:(nonnull VASInlineAdView *)inlineAd {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self->_connector adapterWillLeaveApplication:self];
-  });
+    // Do nothing.
 }
 
 - (nullable UIViewController *)inlineAdPresentingViewController {
@@ -260,23 +258,19 @@
   }
 
   NSDictionary<NSString *, id> *credentials = [strongConnector credentials];
-  NSString *siteID = credentials[kGADMAdapterVerizonMediaDCN];
+  NSString *siteID = credentials[GADMAdapterVerizonMediaDCN];
 
   BOOL isInitialized = GADMAdapterVerizonInitializeVASAdsWithSiteID(siteID);
   if (!isInitialized) {
-    NSError *error =
-        [NSError errorWithDomain:kGADMAdapterVerizonMediaErrorDomain
-                            code:GADErrorMediationAdapterError
-                        userInfo:@{
-                          NSLocalizedDescriptionKey : @"Verizon adapter not properly initialized."
-                        }];
+    NSError *error = GADMAdapterVerizonErrorWithCodeAndDescription(
+        GADMAdapterVerizonErrorInitialization, @"Verizon SDK failed to initialize.");
     [strongConnector adapter:self didFailAd:error];
     return NO;
   }
 
   if (!self.placementID) {
     NSError *error =
-        [NSError errorWithDomain:kGADMAdapterVerizonMediaErrorDomain
+        [NSError errorWithDomain:GADMAdapterVerizonMediaErrorDomain
                             code:GADErrorMediationAdapterError
                         userInfo:@{NSLocalizedDescriptionKey : @"Placement ID cannot be nil."}];
     [strongConnector adapter:self didFailAd:error];
@@ -347,13 +341,15 @@
 }
 
 - (void)setCoppaFromConnector {
-  VASAds.sharedInstance.COPPA = [_connector childDirectedTreatment];
+  VASDataPrivacyBuilder *builder = [[VASDataPrivacyBuilder alloc] initWithDataPrivacy:VASAds.sharedInstance.dataPrivacy];
+  builder.coppa.applies =  [[_connector childDirectedTreatment] boolValue];
+  VASAds.sharedInstance.dataPrivacy = [builder build];
 }
 
 - (CGSize)GADSupportedAdSizeFromRequestedSize:(GADAdSize)gadAdSize {
   NSArray *potentials = @[
-    NSValueFromGADAdSize(kGADAdSizeBanner), NSValueFromGADAdSize(kGADAdSizeMediumRectangle),
-    NSValueFromGADAdSize(kGADAdSizeLeaderboard)
+    NSValueFromGADAdSize(GADAdSizeBanner), NSValueFromGADAdSize(GADAdSizeMediumRectangle),
+    NSValueFromGADAdSize(GADAdSizeLeaderboard)
   ];
   GADAdSize closestSize = GADClosestValidSizeForAdSizes(gadAdSize, potentials);
   if (IsGADAdSizeValid(closestSize)) {

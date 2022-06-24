@@ -14,8 +14,6 @@
 
 #import <CoreLocation/CoreLocation.h>
 #import <IASDKCore/IASDKCore.h>
-#import <IASDKMRAID/IASDKMRAID.h>
-#import <IASDKVideo/IASDKVideo.h>
 
 #include <stdatomic.h>
 
@@ -96,7 +94,7 @@
 
   GADMAdapterFyberRewardedAd *__weak weakSelf = self;
   GADMAdapterFyberInitializeWithAppId(
-      _adConfiguration.credentials.settings[kGADMAdapterFyberApplicationID],
+      _adConfiguration.credentials.settings[GADMAdapterFyberApplicationID],
       ^(NSError *_Nullable error) {
         GADMAdapterFyberRewardedAd *strongSelf = weakSelf;
         if (!strongSelf) {
@@ -115,7 +113,7 @@
 }
 
 - (void)loadRewardedAd {
-  NSString *spotID = _adConfiguration.credentials.settings[kGADMAdapterFyberSpotID];
+  NSString *spotID = _adConfiguration.credentials.settings[GADMAdapterFyberSpotID];
   if (!spotID.length) {
     NSError *error = GADMAdapterFyberErrorWithCodeAndDescription(
         GADMAdapterFyberErrorInvalidServerParameters, @"Missing or Invalid Spot ID.");
@@ -213,6 +211,7 @@
       [[GADAdReward alloc] initWithRewardType:@""
                                  rewardAmount:[NSDecimalNumber decimalNumberWithString:@"1"]];
   [_delegate didRewardUserWithReward:reward];
+  [_delegate didEndVideo];
 }
 
 - (void)IAUnitControllerWillPresentFullscreen:(nullable IAUnitController *)unitController {
@@ -229,9 +228,7 @@
 
 #pragma mark - IAVideoContentDelegate
 
-- (void)IAVideoCompleted:(nullable IAVideoContentController *)contentController {
-  [_delegate didEndVideo];
-}
+- (void)IAVideoCompleted:(nullable IAVideoContentController *)contentController {}
 
 - (void)IAVideoContentController:(nullable IAVideoContentController *)contentController
        videoInterruptedWithError:(nonnull NSError *)error {

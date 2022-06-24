@@ -40,8 +40,8 @@
     _connector = connector;
     _adapter = adapter;
     NSDictionary<NSString *, id> *credentials = [connector credentials];
-    _placementID = credentials[kGADMAdapterVerizonMediaPosition];
-    NSString *siteID = credentials[kGADMAdapterVerizonMediaDCN];
+    _placementID = credentials[GADMAdapterVerizonMediaPosition];
+    NSString *siteID = credentials[GADMAdapterVerizonMediaDCN];
     GADMAdapterVerizonInitializeVASAdsWithSiteID(siteID);
   }
 
@@ -71,26 +71,20 @@
   }
 
   NSDictionary<NSString *, id> *credentials = [strongConnector credentials];
-  NSString *siteID = credentials[kGADMAdapterVerizonMediaDCN];
+  NSString *siteID = credentials[GADMAdapterVerizonMediaDCN];
 
   BOOL isInitialized = GADMAdapterVerizonInitializeVASAdsWithSiteID(siteID);
   if (!isInitialized) {
-    NSError *error =
-        [NSError errorWithDomain:kGADMAdapterVerizonMediaErrorDomain
-                            code:GADErrorMediationAdapterError
-                        userInfo:@{
-                          NSLocalizedDescriptionKey : @"Verizon adapter not properly initialized."
-                        }];
-    [strongConnector adapter:self didFailAd:error];
+    NSError *error = GADMAdapterVerizonErrorWithCodeAndDescription(
+        GADMAdapterVerizonErrorInitialization, @"Verizon SDK failed to initialize.");
+    [strongConnector adapter:(id<GADMAdNetworkAdapter>)self didFailAd:error];
     return NO;
   }
 
   if (!_placementID) {
-    NSError *error =
-        [NSError errorWithDomain:kGADMAdapterVerizonMediaErrorDomain
-                            code:GADErrorMediationAdapterError
-                        userInfo:@{NSLocalizedDescriptionKey : @"Placement ID cannot be nil."}];
-    [strongConnector adapter:self didFailAd:error];
+    NSError *error = GADMAdapterVerizonErrorWithCodeAndDescription(
+        GADMAdapterVerizonErrorInvalidServerParameters, @"Placement ID cannot be nil.");
+    [strongConnector adapter:(id<GADMAdNetworkAdapter>)self didFailAd:error];
     return NO;
   }
 
@@ -116,7 +110,7 @@
   VASRequestMetadataBuilder *builder = [[VASRequestMetadataBuilder alloc] init];
 
   // Mediator
-  builder.mediator = [NSString stringWithFormat:@"AdMobVAS-%@", kGADMAdapterVerizonMediaVersion];
+  builder.mediator = [NSString stringWithFormat:@"AdMobVAS-%@", GADMAdapterVerizonMediaVersion];
 
   // Keywords.
   id<GADMAdNetworkConnector> strongConnector = _connector;
@@ -128,7 +122,9 @@
 }
 
 - (void)setCoppaFromConnector {
-  VASAds.sharedInstance.COPPA = [_connector childDirectedTreatment];
+  VASDataPrivacyBuilder *builder = [[VASDataPrivacyBuilder alloc] initWithDataPrivacy:VASAds.sharedInstance.dataPrivacy];
+  builder.coppa.applies =  [[_connector childDirectedTreatment] boolValue];
+  VASAds.sharedInstance.dataPrivacy = [builder build];
 }
 
 - (NSString *)stringForComponent:(NSString *)componentId {
@@ -262,9 +258,7 @@
 }
 
 - (void)nativeAdDidLeaveApplication:(nonnull VASNativeAd *)nativeAd {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self->_connector adapterWillLeaveApplication:self->_adapter];
-  });
+    // Do nothing.
 }
 
 - (void)nativeAd:(nonnull VASNativeAd *)nativeAd

@@ -30,14 +30,24 @@ void GADMAdapterVerizonMutableSetAddObject(NSMutableSet *_Nullable set, NSObject
 BOOL GADMAdapterVerizonInitializeVASAdsWithSiteID(NSString *_Nullable siteID) {
   if (![VASAds.sharedInstance isInitialized]) {
     if (!siteID.length) {
-      siteID = [NSBundle.mainBundle objectForInfoDictionaryKey:kGADMAdapterVerizonMediaSiteID];
+      siteID = [NSBundle.mainBundle objectForInfoDictionaryKey:GADMAdapterVerizonMediaSiteID];
     }
     BOOL isInitialized = [VASAds initializeWithSiteId:siteID];
-    
+
     [GADMVerizonPrivacy.sharedInstance updatePrivacyData];
     VASAds.logLevel = VASLogLevelError;
-      
+
     return isInitialized;
   }
   return YES;
+}
+
+NSError *_Nonnull GADMAdapterVerizonErrorWithCodeAndDescription(GADMAdapterVerizonErrorCode code,
+                                                                NSString *_Nonnull description) {
+  NSDictionary *userInfo =
+      @{NSLocalizedDescriptionKey : description, NSLocalizedFailureReasonErrorKey : description};
+  NSError *error = [NSError errorWithDomain:GADMAdapterVerizonMediaErrorDomain
+                                       code:code
+                                   userInfo:userInfo];
+  return error;
 }

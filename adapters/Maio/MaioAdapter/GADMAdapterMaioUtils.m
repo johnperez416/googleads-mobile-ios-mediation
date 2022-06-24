@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #import "GADMAdapterMaioUtils.h"
-
 #import "GADMMaioConstants.h"
 
 //@implementation GADMAdapterMaioUtils : NSObject
@@ -81,7 +80,7 @@ NSError *_Nonnull GADMAdapterMaioErrorWithCodeAndDescription(GADMAdapterMaioErro
                                                              NSString *_Nonnull description) {
   NSDictionary *userInfo =
       @{NSLocalizedDescriptionKey : description, NSLocalizedFailureReasonErrorKey : description};
-  NSError *error = [NSError errorWithDomain:kGADMMaioErrorDomain code:code userInfo:userInfo];
+  NSError *error = [NSError errorWithDomain:GADMMaioErrorDomain code:code userInfo:userInfo];
   return error;
 }
 
@@ -91,6 +90,6 @@ NSError *_Nonnull GADMAdapterMaioSDKErrorForFailReason(MaioFailReason reason) {
                                  GADMAdapterMaioStringFromFailReason(reason)];
   NSDictionary *userInfo =
       @{NSLocalizedDescriptionKey : description, NSLocalizedFailureReasonErrorKey : description};
-  NSError *error = [NSError errorWithDomain:kGADMMaioSDKErrorDomain code:reason userInfo:userInfo];
+  NSError *error = [NSError errorWithDomain:GADMMaioSDKErrorDomain code:reason userInfo:userInfo];
   return error;
 }
